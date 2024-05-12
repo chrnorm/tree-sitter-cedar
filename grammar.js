@@ -217,15 +217,6 @@ module.exports = grammar({
 
     argument_list: ($) => seq("(", commaSep($._expression), ")"),
 
-    ip_function_call: ($) =>
-      prec(
-        PREC.primary,
-        seq(
-          field("operand", $._expression),
-          choice(".isIpv4()", ".isIpv6()", ".isLoopback()", ".isMulticast()"),
-        ),
-      ),
-
     contains_expression: ($) =>
       prec(
         PREC.primary,
@@ -292,27 +283,6 @@ module.exports = grammar({
         seq(field("left", $._expression), "is", field("right", $.path)),
       ),
 
-    // Or ::= And {'||' And}
-    or: ($) => seq($.and, optional(seq("||", $.and))),
-
-    // And ::= Relation {'&&' Relation}
-    and: ($) => seq($.relation, optional(seq("&&", $.relation))),
-
-    // Relation ::= Add [RELOP Add] | Add 'has' (IDENT | STR) | Add 'like' PAT | Add 'is' Path ('in' Add)?
-    relation: ($) => $.add, // todo
-
-    // Add ::= Mult {('+' | '-') Mult}
-    add: ($) => seq($.mult, optional(seq(choice("+", "-"), $.mult))),
-
-    // Mult ::= Unary { '*' Unary}
-    mult: ($) => seq($.unary, optional(seq("*", $.unary))),
-
-    // Unary ::= ['!' | '-']x4 Member
-    unary: ($) => seq($.member),
-
-    // Member ::= Primary {Access}
-    member: ($) => seq($.primary),
-
     parenthesized_expression: ($) => seq("(", $._expression, ")"),
 
     // Primary ::= LITERAL
@@ -322,20 +292,11 @@ module.exports = grammar({
     //           | '(' Expr ')'
     //           | '[' [ExprList] ']'
     //          | '{' [RecInits] '}'
-    primary: ($) =>
-      choice($.literal, $.principal, $.resource, $.action, $.context, $.entity),
 
     expression_list: ($) => commaSep1($._expression),
 
     // ExtFun '(' [ExprList] ')'
     ext_fun_call: ($) => seq($.path, "(", optional($.expression_list), ")"),
-
-    // // ExtFun ::= [Path '::'] IDENT
-    // ext_fun: ($) =>
-    //   prec.left(PREC.primary, seq(optional(seq($.path, "::")), $.identifier)),
-
-    // LITERAL ::= BOOL | INT | STR
-    literal: ($) => choice($.true, $.false),
 
     true: ($) => "true",
     false: ($) => "false",
