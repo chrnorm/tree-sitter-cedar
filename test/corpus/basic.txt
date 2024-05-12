@@ -34,7 +34,7 @@ permit (principal, action, resource);
         (all_resources)))))
 
 ==================
-! operators with parentheses
+Binary not operators with parentheses
 ==================
 
 
