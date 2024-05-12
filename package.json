@@ -38,8 +38,8 @@
   ],
   "tree-sitter": [
     {
-      "scope": "source.YOUR_LANGUAGE_NAME",
-      "injection-regex": "^YOUR_LANGUAGE_NAME$"
+      "scope": "source.cedar",
+      "injection-regex": "^cedar$"
     }
   ]
 }

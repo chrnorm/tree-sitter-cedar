@@ -1,6 +1,6 @@
 VERSION := 0.0.1
 
-LANGUAGE_NAME := tree-sitter-YOUR_LANGUAGE_NAME
+LANGUAGE_NAME := tree-sitter-cedar
 
 # repository
 SRC_DIR := src

@@ -26,15 +26,15 @@ setup(
     packages=find_packages("bindings/python"),
     package_dir={"": "bindings/python"},
     package_data={
-        "tree_sitter_your_language_name": ["*.pyi", "py.typed"],
-        "tree_sitter_your_language_name.queries": ["*.scm"],
+        "tree_sitter_cedar": ["*.pyi", "py.typed"],
+        "tree_sitter_cedar.queries": ["*.scm"],
     },
-    ext_package="tree_sitter_your_language_name",
+    ext_package="tree_sitter_cedar",
     ext_modules=[
         Extension(
             name="_binding",
             sources=[
-                "bindings/python/tree_sitter_your_language_name/binding.c",
+                "bindings/python/tree_sitter_cedar/binding.c",
                 "src/parser.c",
                 # NOTE: if your language uses an external scanner, add it here.
             ],
