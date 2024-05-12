@@ -1,0 +1,298 @@
+==================
+Scenario 1A: One Principal, One Action, One Resource
+==================
+
+// Scenario 1A: One Principal, One Action, One Resource
+permit (
+  principal == User::"alice",
+  action == Action::"view",
+  resource == Photo::"VacationPhoto94.jpg"
+);
+
+---
+
+(source_file
+  (comment)
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (principal_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str))))
+      (action_constraint
+        (action_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str))))
+      (resource_constraint
+        (resource_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str)))))))
+
+==================
+Scenario 2A: Anyone in a given group can view a given photo
+==================
+
+// Scenario 2A: Anyone in a given group can view a given photo
+permit (
+  principal in UserGroup::"jane_friends",
+  action == Action::"view",
+  resource == Photo::"VacationPhoto94.jpg"
+);
+
+---
+
+(source_file
+  (comment)
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (principal_in_constraint
+          (entity
+            (path
+              (identifier))
+            (str))))
+      (action_constraint
+        (action_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str))))
+      (resource_constraint
+        (resource_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str)))))))
+
+==================
+Scenario 3A: Any Principal can view jane's "Vacation" album
+==================
+
+// Scenario 3A: Any Principal can view jane's "Vacation" album
+permit (
+  principal,
+  action == Action::"view",
+  resource in Album::"jane_vacation"
+);
+
+---
+
+(source_file
+  (comment)
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (action_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str))))
+      (resource_constraint
+        (resource_in_constraint
+          (entity
+            (path
+              (identifier))
+            (str)))))))
+
+==================
+Scenario 4A: The album device_prototypes is viewable by anyone in the
+department HardwareEngineering with job level at least 5
+==================
+
+// Scenario 4A: The album device_prototypes is viewable by anyone in the
+// department HardwareEngineering with job level at least 5
+permit (
+  principal,
+  action in [Action::"listPhotos", Action::"view"],
+  resource in Album::"device_prototypes"
+)
+when
+{ principal.department == "HardwareEngineering" && principal.jobLevel >= 5 };
+
+---
+
+(source_file
+  (comment)
+  (comment)
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (action_in_list_constraint
+          (entlist
+            (entity
+              (path
+                (identifier))
+              (str)))))
+      (resource_constraint
+        (resource_in_constraint
+          (entity
+            (path
+              (identifier))
+            (str)))))
+    (condition
+      (when)
+      (binary_expression
+        (binary_expression
+          (selector_expression
+            (principal)
+            (field_identifier))
+          (str))
+        (binary_expression
+          (selector_expression
+            (principal)
+            (field_identifier))
+          (int))))))
+
+==================
+Scenario 4F: Anyone who is an owner, or an admin, can perform any action on
+the resource
+==================
+
+permit (principal, action, resource)
+when
+{
+  (resource has account && principal == resource.account.owner) ||
+  resource.admins.contains(principal)
+};
+
+---
+
+(source_file
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (all_actions))
+      (resource_constraint
+        (all_resources)))
+    (condition
+      (when)
+      (binary_expression
+        (parenthesized_expression
+          (binary_expression
+            (has_expression
+              (resource)
+              (field_identifier))
+            (binary_expression
+              (principal)
+              (selector_expression
+                (selector_expression
+                  (resource)
+                  (field_identifier))
+                (field_identifier)))))
+        (contains_expression
+          (selector_expression
+            (resource)
+            (field_identifier))
+          (principal))))))
+
+==================
+Scenario 5B: Complex 'contains' logic
+==================
+
+
+// Scenario 5B: Anyone can upload photos to albums in Alice's account as long as
+// the photo is a JPEG or PNG with maximum size of 1MB. However, members of the
+// group AVTeam can also create RAW files up to 100MB in size.
+permit (
+  principal,
+  action == Action::"addPhoto",
+  resource in Account::"alice"
+)
+when
+{
+  (["JPEG", "PNG"].contains(context.photo.filetype) &&
+   context.photo.filesize_mb <= 1) ||
+  (context.photo.filetype == "RAW" &&
+   context.photo.filesize_mb <= 100 &&
+   principal in UserGroup::"AVTeam")
+};
+
+----
+
+(source_file
+  (comment)
+  (comment)
+  (comment)
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (action_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str))))
+      (resource_constraint
+        (resource_in_constraint
+          (entity
+            (path
+              (identifier))
+            (str)))))
+    (condition
+      (when)
+      (binary_expression
+        (parenthesized_expression
+          (binary_expression
+            (contains_expression
+              (set_literal
+                (str))
+              (selector_expression
+                (selector_expression
+                  (context)
+                  (field_identifier))
+                (field_identifier)))
+            (binary_expression
+              (selector_expression
+                (selector_expression
+                  (context)
+                  (field_identifier))
+                (field_identifier))
+              (int))))
+        (parenthesized_expression
+          (binary_expression
+            (binary_expression
+              (binary_expression
+                (selector_expression
+                  (selector_expression
+                    (context)
+                    (field_identifier))
+                  (field_identifier))
+                (str))
+              (binary_expression
+                (selector_expression
+                  (selector_expression
+                    (context)
+                    (field_identifier))
+                  (field_identifier))
+                (int)))
+            (binary_expression
+              (principal)
+              (entity
+                (path
+                  (identifier))
+                (str)))))))))

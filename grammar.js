@@ -1,3 +1,11 @@
+// This grammar is loosely inspired by the tree-sitter-go grammar here:
+// https://github.com/tree-sitter/tree-sitter-go/blob/master/grammar.js#L22
+//
+// The Cedar syntax specification can be found here: https://docs.cedarpolicy.com/policies/syntax-grammar.html
+//
+// Rather than following the Cedar syntax specification exactly as-is, we've made some changes to minimise the
+// depth of the parsed syntax tree in Tree-Sitter.
+
 const PREC = {
   path: 8,
   primary: 7,
@@ -62,7 +70,7 @@ module.exports = grammar({
     // Principal ::= 'principal' [(['is' PATH] ['in' (Entity | '?principal')]) | ('==' (Entity | '?principal'))]
     principal_constraint: ($) =>
       choice(
-        $.principal, // all principals
+        alias($.principal, $.all_principals), // all principals
         $.principal_is_constraint, // principals of a particular type
         $.principal_eq_constraint, // a specific principal
         $.principal_in_constraint, // principals belonging to a hierarchy
@@ -70,30 +78,34 @@ module.exports = grammar({
         $.principal_in_template_constraint, // principals belonging to a hierarchy (using a policy template)
       ),
 
-    principal_is_constraint: ($) => seq($.principal, "is", $.path),
-    principal_eq_constraint: ($) => seq($.principal, "==", $.entity),
-    principal_in_constraint: ($) => seq($.principal, "in", $.entity),
+    principal_is_constraint: ($) =>
+      seq("principal", "is", field("right", $.path)),
+    principal_eq_constraint: ($) =>
+      seq("principal", "==", field("right", $.entity)),
+    principal_in_constraint: ($) =>
+      seq("principal", "in", field("right", $.entity)),
     principal_eq_template_constraint: ($) =>
-      seq($.principal, "==", "?principal"),
+      seq("principal", "==", "?principal"),
     principal_in_template_constraint: ($) =>
-      seq($.principal, "in", "?principal"),
+      seq("principal", "in", "?principal"),
 
     // Action ::= 'action' [( '==' Entity | 'in' ('[' EntList ']' | Entity) )]
     action_constraint: ($) =>
       choice(
-        $.action, // all actions
+        alias($.action, $.all_actions), // all actions
         $.action_eq_constraint, // a specific action
         $.action_in_constraint, // actions belonging to a hierarchy
         $.action_in_list_constraint, // e.g. `action in [Action::"demo", Action::"other"]`
       ),
-    action_eq_constraint: ($) => seq($.action, "==", $.entity),
-    action_in_constraint: ($) => seq($.action, "in", $.entity),
-    action_in_list_constraint: ($) => seq($.action, "in", $.entlist),
+    action_eq_constraint: ($) => seq("action", "==", field("right", $.entity)),
+    action_in_constraint: ($) => seq("action", "in", field("right", $.entity)),
+    action_in_list_constraint: ($) =>
+      seq("action", "in", field("right", $.entlist)),
 
     // Resource ::= 'resource' [(['is' PATH] ['in' (Entity | '?resource')]) | ('==' (Entity | '?resource'))]
     resource_constraint: ($) =>
       choice(
-        $.resource, // all resources
+        alias($.resource, $.all_resources), // all resources
         $.resource_is_constraint, // resources of a particular type
         $.resource_eq_constraint, // a specific resource
         $.resource_in_constraint, // resources belonging to a hierarchy
@@ -101,11 +113,14 @@ module.exports = grammar({
         $.resource_in_template_constraint, // resources belonging to a hierarchy (using a policy template)
       ),
 
-    resource_is_constraint: ($) => seq($.resource, "is", $.path),
-    resource_eq_constraint: ($) => seq($.resource, "==", $.entity),
-    resource_in_constraint: ($) => seq($.resource, "in", $.entity),
-    resource_eq_template_constraint: ($) => seq($.resource, "==", "?resource"),
-    resource_in_template_constraint: ($) => seq($.resource, "in", "?principal"),
+    resource_is_constraint: ($) =>
+      seq("resource", "is", field("right", $.path)),
+    resource_eq_constraint: ($) =>
+      seq("resource", "==", field("right", $.entity)),
+    resource_in_constraint: ($) =>
+      seq("resource", "in", field("right", $.entity)),
+    resource_eq_template_constraint: ($) => seq("resource", "==", "?resource"),
+    resource_in_template_constraint: ($) => seq("resource", "in", "?resource"),
 
     // Condition ::= ('when' | 'unless') '{' Expr '}'
     condition: ($) => seq(choice($.when, $.unless), "{", $._expression, "}"),
@@ -120,10 +135,11 @@ module.exports = grammar({
         $.selector_expression,
         $.has_expression,
         $.is_expression,
+        $.call_expression,
+        $.like_expression,
         $.if_then_else,
         $.contains_expression,
         $.contains_all_expression,
-        $.ip_function_call,
         $.ext_fun_call,
         $.entity,
         $.entlist,
@@ -190,6 +206,17 @@ module.exports = grammar({
       );
     },
 
+    call_expression: ($) =>
+      prec(
+        PREC.primary,
+        seq(
+          field("function", $._expression),
+          field("arguments", $.argument_list),
+        ),
+      ),
+
+    argument_list: ($) => seq("(", commaSep($._expression), ")"),
+
     ip_function_call: ($) =>
       prec(
         PREC.primary,
@@ -253,6 +280,12 @@ module.exports = grammar({
         ),
       ),
 
+    like_expression: ($) =>
+      prec(
+        PREC.primary,
+        seq(field("left", $._expression), "like", field("right", $.str)),
+      ),
+
     is_expression: ($) =>
       prec(
         PREC.primary,
@@ -310,7 +343,10 @@ module.exports = grammar({
     unary_expression: ($) =>
       prec(
         PREC.unary,
-        seq(field("operator", choice("-", "!")), field("operand", $.member)),
+        seq(
+          field("operator", choice("-", "!")),
+          field("operand", $._expression),
+        ),
       ),
 
     // Annotation ::= '@'IDENT'('STR')'
@@ -323,13 +359,13 @@ module.exports = grammar({
     annotation: ($) => seq("@", $.identifier, "(", $.str, ")"),
 
     // Entity ::= Path '::' STR
-    entity: ($) => seq($.path, `::"`, $.identifier, `"`),
+    entity: ($) => seq(field("type", $.path), `::`, field("id", $.str)),
 
     // EntList ::= Entity {',' Entity}
     entlist: ($) =>
       seq("[", $.entity, optional(repeat(seq(",", $.entity))), "]"),
 
-    path: ($) => seq(optional(repeat(seq($.identifier, "::"))), $.identifier),
+    path: ($) => prec.left(PREC.primary, doubleColonSep1($.identifier)),
 
     principal: ($) => "principal",
     action: ($) => "action",
@@ -353,6 +389,10 @@ module.exports = grammar({
     comment: ($) => token(seq("//", /.*/)),
   },
 });
+
+function doubleColonSep1(rule) {
+  return seq(rule, repeat(seq("::", rule)));
+}
 
 /**
  * Creates a rule to match one or more of the rules separated by a comma

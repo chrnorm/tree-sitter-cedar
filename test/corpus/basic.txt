@@ -1,0 +1,107 @@
+==================
+Multiple policies
+==================
+@id("P0")
+permit (principal, action, resource);
+
+permit (principal, action, resource);
+
+---
+
+(source_file
+  (policy
+    (annotation
+      (identifier)
+      (str))
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (all_actions))
+      (resource_constraint
+        (all_resources))))
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (all_actions))
+      (resource_constraint
+        (all_resources)))))
+
+==================
+! operators with parentheses
+==================
+
+
+permit (
+  principal,
+  action == Action::"view",
+  resource == Photo::"VacationPhoto94.jpg"
+)
+when
+{ !(false) };
+
+---
+
+(source_file
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (action_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str))))
+      (resource_constraint
+        (resource_eq_constraint
+          (entity
+            (path
+              (identifier))
+            (str)))))
+    (condition
+      (when)
+      (unary_expression
+        (parenthesized_expression
+          (false))))))
+
+==================
+like operator
+==================
+
+permit (
+  principal,
+  action,
+  resource
+)
+when
+{ context.location like "s3:*" };
+
+---
+
+(source_file
+  (policy
+    (effect
+      (permit))
+    (scope
+      (principal_constraint
+        (all_principals))
+      (action_constraint
+        (all_actions))
+      (resource_constraint
+        (all_resources)))
+    (condition
+      (when)
+      (like_expression
+        (selector_expression
+          (context)
+          (field_identifier))
+        (str)))))
