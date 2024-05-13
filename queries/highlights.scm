@@ -40,6 +40,7 @@
   ">="
   "||"
   "in"
+  "has"
 ] @operator
 
 ; Keywords
@@ -49,7 +50,6 @@
   (forbid)
   (when)
   (unless)
-  "has"
 ] @keyword
 
 
