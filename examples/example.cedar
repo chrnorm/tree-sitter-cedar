@@ -1,4 +1,4 @@
-@ hello("world")
+@hello("world")
 // a comment here
 permit (
     // another comment here

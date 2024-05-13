@@ -1125,14 +1125,6 @@
     "named": false
   },
   {
-    "type": ".contains",
-    "named": false
-  },
-  {
-    "type": ".containsAll",
-    "named": false
-  },
-  {
     "type": ":",
     "named": false
   },
@@ -1191,6 +1183,14 @@
   {
     "type": "comment",
     "named": true
+  },
+  {
+    "type": "contains",
+    "named": false
+  },
+  {
+    "type": "containsAll",
+    "named": false
   },
   {
     "type": "context",

@@ -222,7 +222,8 @@ module.exports = grammar({
         PREC.primary,
         seq(
           field("operand", $._expression),
-          ".contains",
+          ".",
+          "contains",
           "(",
           field("field", $._expression),
           ")",
@@ -234,7 +235,8 @@ module.exports = grammar({
         PREC.primary,
         seq(
           field("operand", $._expression),
-          ".containsAll",
+          ".",
+          "containsAll",
           "(",
           field("field", $._expression),
           ")",

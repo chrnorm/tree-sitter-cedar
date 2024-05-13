@@ -1076,7 +1076,11 @@
           },
           {
             "type": "STRING",
-            "value": ".contains"
+            "value": "."
+          },
+          {
+            "type": "STRING",
+            "value": "contains"
           },
           {
             "type": "STRING",
@@ -1113,7 +1117,11 @@
           },
           {
             "type": "STRING",
-            "value": ".containsAll"
+            "value": "."
+          },
+          {
+            "type": "STRING",
+            "value": "containsAll"
           },
           {
             "type": "STRING",
