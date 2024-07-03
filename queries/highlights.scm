@@ -1,31 +1,34 @@
 ; Function calls
-
 (call_expression
   function: (selector_expression
     field: (field_identifier) @function.method))
 
 [
-    "contains"
-    "containsAll"
+  "contains"
+  "containsAll"
 ] @function
 
-; Identifiers
+; Annotations
+(annotation) @attribute
 
+; Identifiers
 [
-    (entity)
-    (principal)
-    (action)
-    (resource)
-    (context)
-    (identifier)
-    (annotation)
+  (entity)
+  (identifier)
 ] @variable
 
+[
+  (principal)
+  (action)
+  (resource)
+  (context)
+] @variable.builtin
+
 (path) @type
+
 (field_identifier) @property
 
 ; Operators
-
 [
   "-"
   "!"
@@ -44,7 +47,6 @@
 ] @operator
 
 ; Keywords
-
 [
   (permit)
   (forbid)
@@ -52,9 +54,7 @@
   (unless)
 ] @keyword
 
-
 ; Literals
-
 (str) @string
 
 (int) @number
@@ -62,6 +62,8 @@
 [
   (true)
   (false)
-] @constant.builtin
+] @boolean
 
-(comment) @comment
+(comment) @comment @spell
+
+"::" @punctuation.delimiter
